@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-import Servo
+from servo import Servo
 import board
 import busio
 import adafruit_hm01b0

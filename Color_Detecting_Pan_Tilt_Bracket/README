@@ -1,0 +1,3 @@
+This project was my most important foundational project that involved a computer running code based the feed from an attached camera, processing it to continously get the position of a 
+specifically colored object, and sending an appropriate command via serial to an arduino, which would move 2 micro servo motors based on the command, and report back via the same
+serial connection.

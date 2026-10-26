@@ -1,7 +1,7 @@
  module UART_RX #(
     parameter CLK_FREQ_HZ = 100000000,
     parameter BAUD_RATE = 115200,
-    parameter CLKS_PER_BIT = 16,
+    parameter OVERSAMPLING_RATE = 16,
     parameter N_BITS = 8
     )(
     input logic         clk,
@@ -12,8 +12,11 @@
     output logic        rx_valid_start,
     output logic  [7:0] rx_data,
     output logic        rx_done,
-    output logic        tick
+    output logic        tick,
+    output logic        idle_check
     );
+
+    assign idle_check == (curr_state == IDLE);
 
     // Flip-Flop Synchronizer
         logic rx_sync_mid;
@@ -34,7 +37,6 @@
         assign falling_edge = rx_prev & ~rx_sync;
 
     // Timers (Clock / Sampling)
-        localparam int OVERSAMPLING_RATE = 16;
         localparam int DIV = (CLK_FREQ_HZ + (BAUD_RATE * OVERSAMPLING_RATE)/2) / (BAUD_RATE * OVERSAMPLING_RATE);
         localparam int W = $clog2(DIV) + 1;
 
@@ -111,7 +113,7 @@
         end else if (curr_state == STOP) begin
             if (valid_stop_bit && !full) begin
                     fifo_write_enable <= 1;
-                end
+            end
         end 
     end
 

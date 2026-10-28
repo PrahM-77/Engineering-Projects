@@ -13,10 +13,22 @@
     output logic  [7:0] rx_data,
     output logic        rx_done,
     output logic        tick,
-    output logic        idle_check
+    output logic        idle_check,
+
+    /* For TestBench
+        output logic  [3:0] 	bit_counter,
+        output logic 	        bit_checker,
+        output logic  [3:0]     sample_counter,
+        
+        output logic            read_checker,
+        output logic            data_checker
+   */
     );
 
-    assign idle_check == (curr_state == IDLE);
+    logic [3:0] bit_counter;
+    logic [3:0] sample_counter;
+
+    assign idle_check = (curr_state == IDLE);
 
     // Flip-Flop Synchronizer
         logic rx_sync_mid;
@@ -56,10 +68,6 @@
                 end
             end
         end 
-
-        logic [3:0] sample_counter;
-
-        logic [3:0] bit_counter;
         
         typedef enum logic [1:0] {IDLE, READ, DATA, STOP} state_machine;
 
@@ -75,33 +83,34 @@
 
         always_ff @ (posedge clk or posedge rst) begin
             if (rst) begin
-                bit_counter <= 4'd0;
+                bit_counter <= '0;
                 rx_data <= '0;
                 sample_counter <= '0;
             end else if (curr_state == READ) begin
-                if(sample_counter == 8 && rx_valid_start == 0) begin
-                    sample_counter <= '0;
+                if (sample_counter == 8) begin
+                    sample_counter <= '0;   
+                end else if (tick) begin
+                    sample_counter <= sample_counter + 1;
                 end
             end
             else if (curr_state == DATA) begin
                 if (rx_done) begin
                     bit_counter <= '0;
-                end
-                else if (tick) begin
-                    if(sample_counter == 15) begin
-                        rx_data[bit_counter] <= rx_sync;
+                end else if (tick) begin
+                    if (sample_counter == 15) begin
+                        rx_data[bit_counter] <= rx_sync; 
                         bit_counter <= bit_counter + 1'b1;
                         sample_counter <= '0;
                     end else begin
                         sample_counter <= sample_counter + 1;
                     end
                 end
-            end 
+            end
             else if (falling_edge || rx_valid_start) begin
-                sample_counter <= 3'd0;
+                sample_counter <= '0;
             end else if (curr_state != IDLE && tick) begin
                 sample_counter <= sample_counter + 1;
-            end 
+            end
         end
 
     always_ff @ (posedge clk or posedge rst) begin
@@ -172,7 +181,7 @@
 
             DATA: begin
                 rx_valid_start = 0;
-                if (bit_counter == N_BITS)
+              if (bit_counter == N_BITS)
                     rx_done = 1;
             end
 
